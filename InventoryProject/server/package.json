@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "inventory-project": "file:../.."
+  }
+}

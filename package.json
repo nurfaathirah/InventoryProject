@@ -1,0 +1,21 @@
+{
+  "name": "inventory-project",
+  "version": "1.0.0",
+  "description": "PC and Laptop Inventory Management System",
+  "scripts": {
+    "dev": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "dev:all": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "build": "cd client && npm run build",
+    "preview": "cd client && npm run preview",
+    "install-all": "cd client && npm install && cd ../server && npm install",
+    "setup": "npm run install-all",
+    "start:server": "cd server && npm start"
+  },
+  "keywords": ["inventory", "management", "pc", "laptop"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
