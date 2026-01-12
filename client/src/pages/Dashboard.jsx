@@ -16,25 +16,23 @@ const Dashboard = ({ onNavigate, searchTerm: externalSearchTerm = '', categoryFi
     filterInventory();
   }, [inventory, externalSearchTerm, externalCategoryFilter]);
 
-  const loadData = () => {
-    (async () => {
-      const inv = await getInventory();
-      setInventory(inv || []);
-      const statsData = await getStats();
-      const stock = await getStock();
+  const loadData = async () => {
+    const inv = await getInventory();
+    setInventory(inv || []);
+    const statsData = await getStats();
+    const stock = await getStock();
 
-      // Calculate stock count by location
-      const locationCounts = {};
-      (stock || []).forEach(entry => {
-        const location = entry.location || 'Unknown';
-        locationCounts[location] = (locationCounts[location] || 0) + 1;
-      });
+    // Calculate stock count by location
+    const locationCounts = {};
+    (stock || []).forEach(entry => {
+      const location = entry.location || 'Unknown';
+      locationCounts[location] = (locationCounts[location] || 0) + 1;
+    });
 
-      setStats({
-        ...(statsData || { totalItems: 0, pcs: 0, laptops: 0, totalQuantity: 0 }),
-        locationCounts
-      });
-    })();
+    setStats({
+      ...(statsData || { totalItems: 0, pcs: 0, laptops: 0, totalQuantity: 0 }),
+      locationCounts
+    });
   };
 
   const filterInventory = () => {

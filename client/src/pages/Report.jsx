@@ -11,13 +11,11 @@ const Report = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    (async () => {
-      const inv = await getInventory();
-      const statsData = await getStats();
-      setInventory(inv || []);
-      setStats(statsData || { totalItems: 0, pcs: 0, laptops: 0, totalQuantity: 0 });
-    })();
+  const loadData = async () => {
+    const inv = await getInventory();
+    const statsData = await getStats();
+    setInventory(inv || []);
+    setStats(statsData || { totalItems: 0, pcs: 0, laptops: 0, totalQuantity: 0 });
   };
 
   const generateReport = () => {

@@ -35,14 +35,12 @@ const StockIn = ({ preSelectedItem, editData }) => {
     }
   }, [editData]);
 
-  const loadData = () => {
-    (async () => {
-      const inv = await getInventory();
-      const itemsList = await getItems();
-      setInventory(inv || []);
-      setItems(itemsList || []);
-      setFilteredInventory(inv || []);
-    })();
+  const loadData = async () => {
+    const inv = await getInventory();
+    const itemsList = await getItems();
+    setInventory(inv || []);
+    setItems(itemsList || []);
+    setFilteredInventory(inv || []);
   };
 
   const handleAddItem = () => {
@@ -58,31 +56,27 @@ const StockIn = ({ preSelectedItem, editData }) => {
     setShowUpdateStockForm(true);
   };
 
-  const handleAddItemSubmit = (formData) => {
+  const handleAddItemSubmit = async (formData) => {
     try {
-      (async () => {
-        await addItem(formData);
-        setShowAddItemForm(false);
-        loadData();
-      })();
+      await addItem(formData);
+      setShowAddItemForm(false);
+      await loadData();
     } catch (error) {
       console.error('Error adding item:', error);
       alert('Error adding item');
     }
   };
 
-  const handleUpdateStockSubmit = (formData) => {
+  const handleUpdateStockSubmit = async (formData) => {
     try {
-      (async () => {
-        await addStockEntries(formData.item_id, formData.entries.map(entry => ({
-          serial_number: entry.serial_number,
-          asset_id: entry.asset_id,
-          location: formData.location
-        })));
-        setShowUpdateStockForm(false);
-        setPreSelectedItemForStock(null);
-        loadData();
-      })();
+      await addStockEntries(formData.item_id, formData.entries.map(entry => ({
+        serial_number: entry.serial_number,
+        asset_id: entry.asset_id,
+        location: formData.location
+      })));
+      setShowUpdateStockForm(false);
+      setPreSelectedItemForStock(null);
+      await loadData();
     } catch (error) {
       console.error('Error updating stock:', error);
       alert('Error updating stock');
@@ -100,18 +94,17 @@ const StockIn = ({ preSelectedItem, editData }) => {
     setShowEditStockForm(true);
   };
 
-  const handleEditStockSubmit = (formData) => {
+  const handleEditStockSubmit = async (formData) => {
     try {
-      (async () => {
-        await updateStockEntry(editingStockEntry.id, formData);
-        setShowEditStockForm(false);
-        setEditingStockEntry(null);
-        setEditingStockItem(null);
-        loadData();
-      })();
+      await updateStockEntry(editingStockEntry.id, formData);
+      setShowEditStockForm(false);
+      setEditingStockEntry(null);
+      setEditingStockItem(null);
+      await loadData();
     } catch (error) {
       console.error('Error updating stock entry:', error);
-      alert('Error updating stock entry');
+      const msg = (error && (error.response && error.response.error)) || error.message || 'Error updating stock entry';
+      alert(msg);
     }
   };
 
@@ -121,18 +114,17 @@ const StockIn = ({ preSelectedItem, editData }) => {
     setEditingStockItem(null);
   };
 
-  const handleDeleteStockEntry = () => {
+  const handleDeleteStockEntry = async () => {
     try {
-      (async () => {
-        await deleteStockEntry(editingStockEntry.id);
-        setShowEditStockForm(false);
-        setEditingStockEntry(null);
-        setEditingStockItem(null);
-        loadData();
-      })();
+      await deleteStockEntry(editingStockEntry.id);
+      setShowEditStockForm(false);
+      setEditingStockEntry(null);
+      setEditingStockItem(null);
+      await loadData();
     } catch (error) {
       console.error('Error deleting stock entry:', error);
-      alert('Error deleting stock entry');
+      const msg = (error && (error.response && error.response.error)) || error.message || 'Error deleting stock entry';
+      alert(msg);
     }
   };
 

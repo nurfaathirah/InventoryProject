@@ -145,7 +145,14 @@ app.post('/api/stock', async (req, res) => {
 // Update stock entry
 app.put('/api/stock/:id', async (req, res) => {
   try {
-    const { serial_number, asset_id, location, staff_id, deployment_location, deployment_date } = req.body;
+    console.log('PUT /api/stock/:id', { params: req.params, body: req.body });
+    // Coerce undefined -> null to avoid mysql2 bind errors
+    const serial_number = req.body.serial_number ?? null;
+    const asset_id = req.body.asset_id ?? null;
+    const location = req.body.location ?? null;
+    const staff_id = req.body.staff_id ?? null;
+    const deployment_location = req.body.deployment_location ?? null;
+    const deployment_date = req.body.deployment_date ?? null;
     await pool.execute(
       `UPDATE stock SET serial_number = ?, asset_id = ?, location = ?, 
        staff_id = ?, deployment_location = ?, deployment_date = ? 
@@ -212,7 +219,12 @@ app.get('/api/stock-out', async (req, res) => {
 // Add stock out entry (move from stock to stock_out)
 app.post('/api/stock-out', async (req, res) => {
   try {
-    const { stock_id, item_id, staff_id, deployment_location, deployment_date } = req.body;
+    console.log('POST /api/stock-out', { body: req.body });
+    const stock_id = req.body.stock_id;
+    const item_id = req.body.item_id;
+    const staff_id = req.body.staff_id ?? null;
+    const deployment_location = req.body.deployment_location ?? null;
+    const deployment_date = req.body.deployment_date ?? null;
     
     // Get stock entry and item details
     const [stockEntry] = await pool.execute(

@@ -28,35 +28,31 @@ const StockOut = ({ onNavigate, showList = false }) => {
     }
   }, [showList]);
 
-  const loadData = () => {
-    (async () => {
-      const inv = await getInventory();
-      const itemsList = await getItems();
-      setInventory(inv || []);
-      setItems(itemsList || []);
+  const loadData = async () => {
+    const inv = await getInventory();
+    const itemsList = await getItems();
+    setInventory(inv || []);
+    setItems(itemsList || []);
 
-      // Initialize stock entries data
-      const entriesData = {};
-      (inv || []).forEach(item => {
-        if (item.stock && item.stock.length > 0) {
-          item.stock.forEach(stockEntry => {
-            entriesData[stockEntry.id] = {
-              staff_id: stockEntry.staff_id || '',
-              deployment_location: stockEntry.deployment_location || '',
-              deployment_date: stockEntry.deployment_date || ''
-            };
-          });
-        }
-      });
-      setStockEntriesData(entriesData);
-    })();
+    // Initialize stock entries data
+    const entriesData = {};
+    (inv || []).forEach(item => {
+      if (item.stock && item.stock.length > 0) {
+        item.stock.forEach(stockEntry => {
+          entriesData[stockEntry.id] = {
+            staff_id: stockEntry.staff_id || '',
+            deployment_location: stockEntry.deployment_location || '',
+            deployment_date: stockEntry.deployment_date || ''
+          };
+        });
+      }
+    });
+    setStockEntriesData(entriesData);
   };
 
-  const loadStockOutList = () => {
-    (async () => {
-      const list = await getStockOut();
-      setStockOutList(list || []);
-    })();
+  const loadStockOutList = async () => {
+    const list = await getStockOut();
+    setStockOutList(list || []);
   };
 
   const filterInventory = () => {
@@ -79,40 +75,46 @@ const StockOut = ({ onNavigate, showList = false }) => {
     }));
   };
 
-  const handleSave = (stockEntryId, item) => {
-    (async () => {
-      const entryData = stockEntriesData[stockEntryId];
-      if (!entryData) return;
+  const handleSave = async (stockEntryId, item) => {
+    const entryData = stockEntriesData[stockEntryId];
+    if (!entryData) return;
 
-      // Validate required fields
-      if (!entryData.staff_id || !entryData.deployment_location || !entryData.deployment_date) {
-        alert('Please fill in all fields: Staff ID, Deployment Location, and Deployment Date');
+    // Validate required fields
+    if (!entryData.staff_id || !entryData.deployment_location || !entryData.deployment_date) {
+      alert('Please fill in all fields: Staff ID, Deployment Location, and Deployment Date');
+      return;
+    }
+
+    try {
+      // Find the stock entry
+      const stockEntry = (item.stock || []).find(s => s.id === stockEntryId);
+      if (!stockEntry) {
+        alert('Stock entry not found');
         return;
       }
 
-      try {
-        // Find the stock entry
-        const stockEntry = (item.stock || []).find(s => s.id === stockEntryId);
-        if (!stockEntry) {
-          alert('Stock entry not found');
-          return;
-        }
+      const payload = {
+        serial_number: stockEntry.serial_number ?? null,
+        asset_id: stockEntry.asset_id ?? null,
+        location: stockEntry.location ?? null,
+        staff_id: entryData.staff_id,
+        deployment_location: entryData.deployment_location,
+        deployment_date: entryData.deployment_date
+      };
+      console.debug('Updating stock entry', stockEntryId, payload);
 
-        const updatedEntry = await updateStockEntry(stockEntryId, {
-          staff_id: entryData.staff_id,
-          deployment_location: entryData.deployment_location,
-          deployment_date: entryData.deployment_date
-        });
+      const updatedEntry = await updateStockEntry(stockEntryId, payload);
 
-        await addStockOutEntry(updatedEntry, item);
+      console.debug('Creating stock-out for', stockEntryId, 'item', item.id);
+      await addStockOutEntry(stockEntryId, item.id, payload);
 
-        alert('Stock entry saved and moved to Stock Out list');
-        loadData();
-      } catch (error) {
-        console.error('Error saving stock entry:', error);
-        alert('Error saving stock entry');
-      }
-    })();
+      alert('Stock entry saved and moved to Stock Out list');
+      await loadData();
+    } catch (error) {
+      console.error('Error saving stock entry:', error);
+      const msg = (error && (error.response && error.response.error)) || error.message || 'Error saving stock entry';
+      alert(msg);
+    }
   };
 
   if (showList) {
