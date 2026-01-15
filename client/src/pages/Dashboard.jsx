@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import StatsCard from '../components/StatsCard';
 import DashboardInventoryList from '../components/DashboardInventoryList';
+import InventoryList from '../components/InventoryList';
 import { getInventory, getStats, getStock } from '../services/storage';
 
 const Dashboard = ({ onNavigate, searchTerm: externalSearchTerm = '', categoryFilter: externalCategoryFilter = '' }) => {
@@ -40,15 +41,32 @@ const Dashboard = ({ onNavigate, searchTerm: externalSearchTerm = '', categoryFi
 
     if (externalSearchTerm) {
       const term = externalSearchTerm.toLowerCase();
-      filtered = filtered.filter(item =>
+
+      // Check if any items match at the item level (name, brand, model)
+      const itemLevelMatches = inventory.filter(item =>
         item.name.toLowerCase().includes(term) ||
         item.brand.toLowerCase().includes(term) ||
-        item.model.toLowerCase().includes(term) ||
-        (item.stock && item.stock.some(s => 
+        item.model.toLowerCase().includes(term)
+      );
+
+      // Check if any items have stock that matches (serial number, asset ID)
+      const stockLevelMatches = inventory.filter(item =>
+        item.stock && item.stock.some(s =>
           (s.serial_number && s.serial_number.toLowerCase().includes(term)) ||
           (s.asset_id && s.asset_id.toLowerCase().includes(term))
-        ))
+        )
       );
+
+      if (itemLevelMatches.length > 0) {
+        // If there are item-level matches, show all matching items with their full stock
+        filtered = itemLevelMatches;
+      } else if (stockLevelMatches.length > 0) {
+        // If only stock-level matches, show only the items that have matching stock
+        filtered = stockLevelMatches;
+      } else {
+        // No matches
+        filtered = [];
+      }
     }
 
     if (externalCategoryFilter) {

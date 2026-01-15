@@ -64,54 +64,63 @@ const InventoryList = ({ inventory, onUpdateStock, onEditStock, expandedItemId =
               </div>
             </div>
 
-            {item.stock && item.stock.length > 0 && (
-              <div className="stock-section">
-                <button
-                  className="toggle-stock-btn"
-                  onClick={() => toggleExpand(item.id)}
-                >
-                  {expandedItems[item.id] ? '▼' : '▶'} View Stock Details ({item.stock.length} units)
-                </button>
-                {expandedItems[item.id] && (
-                  <div className="stock-details">
-                    <table className="stock-table">
-                      <thead>
-                        <tr>
-                          <th>Serial Number</th>
-                          <th>Asset ID</th>
-                          <th>Location</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {item.stock.map((stockEntry) => {
-                          const isHighlighted = highlightedAssetOrSerial && (
-                            (stockEntry.asset_id && stockEntry.asset_id.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase())) ||
-                            (stockEntry.serial_number && stockEntry.serial_number.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase()))
-                          );
-                          return (
-                            <tr key={stockEntry.id} className={isHighlighted ? 'highlighted' : ''}>
-                              <td>{stockEntry.serial_number || 'N/A'}</td>
-                              <td>{stockEntry.asset_id || 'N/A'}</td>
-                              <td>📍 {stockEntry.location || 'N/A'}</td>
-                              <td>
-                                <button
-                                  className="btn-edit-stock"
-                                  onClick={() => onEditStock(stockEntry, item)}
-                                  title="Edit Details"
-                                >
-                                  ✏️ Edit Details
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
+            {item.stock && item.stock.length > 0 && (() => {
+              const filteredStock = highlightedAssetOrSerial
+                ? item.stock.filter(stockEntry =>
+                    (stockEntry.asset_id && stockEntry.asset_id.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase())) ||
+                    (stockEntry.serial_number && stockEntry.serial_number.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase()))
+                  )
+                : item.stock;
+
+              return filteredStock.length > 0 ? (
+                <div className="stock-section">
+                  <button
+                    className="toggle-stock-btn"
+                    onClick={() => toggleExpand(item.id)}
+                  >
+                    {expandedItems[item.id] ? '▼' : '▶'} View Stock Details ({filteredStock.length} units)
+                  </button>
+                  {expandedItems[item.id] && (
+                    <div className="stock-details">
+                      <table className="stock-table">
+                        <thead>
+                          <tr>
+                            <th>Serial Number</th>
+                            <th>Asset ID</th>
+                            <th>Location</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredStock.map((stockEntry) => {
+                            const isHighlighted = highlightedAssetOrSerial && (
+                              (stockEntry.asset_id && stockEntry.asset_id.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase())) ||
+                              (stockEntry.serial_number && stockEntry.serial_number.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase()))
+                            );
+                            return (
+                              <tr key={stockEntry.id} className={isHighlighted ? 'highlighted' : ''}>
+                                <td>{stockEntry.serial_number || 'N/A'}</td>
+                                <td>{stockEntry.asset_id || 'N/A'}</td>
+                                <td>📍 {stockEntry.location || 'N/A'}</td>
+                                <td>
+                                  <button
+                                    className="btn-edit-stock"
+                                    onClick={() => onEditStock(stockEntry, item)}
+                                    title="Edit Details"
+                                  >
+                                    ✏️ Edit Details
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
       ))}

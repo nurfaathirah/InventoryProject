@@ -23,6 +23,16 @@ const StockIn = ({ preSelectedItem, editData, navigationData }) => {
   }, []);
 
   useEffect(() => {
+    if (navigationData?.expandedItemId) {
+      // Filter to show only the expanded item
+      const expandedItem = inventory.find(item => item.id === navigationData.expandedItemId);
+      setFilteredInventory(expandedItem ? [expandedItem] : []);
+    } else {
+      setFilteredInventory(inventory);
+    }
+  }, [inventory, navigationData]);
+
+  useEffect(() => {
     if (preSelectedItem) {
       setPreSelectedItemForStock(preSelectedItem);
       setShowUpdateStockForm(true);
