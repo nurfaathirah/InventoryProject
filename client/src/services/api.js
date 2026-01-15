@@ -75,10 +75,10 @@ export const getStock = async () => {
   return result.data || [];
 };
 
-export const addStockEntries = async (itemId, entries) => {
+export const addStockEntries = async (itemId, entries, adminId, adminName) => {
   const result = await apiCall('/stock', {
     method: 'POST',
-    body: JSON.stringify({ item_id: itemId, entries })
+    body: JSON.stringify({ item_id: itemId, entries, admin_id: adminId, admin_name: adminName })
   });
   return result.data || [];
 };

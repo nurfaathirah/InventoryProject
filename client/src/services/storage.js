@@ -21,7 +21,10 @@ export const getStock = async () => {
 };
 
 export const addStockEntries = async (itemId, entries) => {
-  return await api.addStockEntries(itemId, entries);
+  const currentUser = getCurrentUser();
+  const adminId = currentUser ? currentUser.id : null;
+  const adminName = currentUser ? currentUser.name : null;
+  return await api.addStockEntries(itemId, entries, adminId, adminName);
 };
 
 export const updateStockEntry = async (id, updatedEntry) => {
