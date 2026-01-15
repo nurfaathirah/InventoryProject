@@ -168,8 +168,9 @@ const Report = () => {
                     <tr>
                       <th>Asset ID</th>
                       <th>Serial Number</th>
-                      <th>Date Restock</th>
                       <th>Location</th>
+                      <th>Admin Name</th>
+                      <th>Date Restock</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -177,8 +178,9 @@ const Report = () => {
                       <tr key={stock.id || stockIdx}>
                         <td>{stock.asset_id || 'N/A'}</td>
                         <td>{stock.serial_number || 'N/A'}</td>
-                        <td>{stock.created_at ? new Date(stock.created_at).toLocaleDateString() : 'N/A'}</td>
                         <td>{stock.location || 'N/A'}</td>
+                        <td><strong>{stock.admin_name || 'N/A'}</strong></td>
+                        <td>{stock.created_at ? new Date(stock.created_at).toLocaleDateString() : 'N/A'}</td>
                       </tr>
                     ))}
                   </tbody>

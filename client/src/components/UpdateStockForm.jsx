@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './AddItemForm.css';
 import './UpdateStockForm.css';
+import { getCurrentUser } from '../services/storage';
 
 const UpdateStockForm = ({ items, preSelectedItem, onSubmit, onCancel }) => {
   const [selectedItemId, setSelectedItemId] = useState(preSelectedItem?.id || '');
@@ -8,6 +9,12 @@ const UpdateStockForm = ({ items, preSelectedItem, onSubmit, onCancel }) => {
   const [quantity, setQuantity] = useState(1);
   const [location, setLocation] = useState('');
   const [stockEntries, setStockEntries] = useState([{ serial_number: '', asset_id: '' }]);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    setCurrentUser(user);
+  }, []);
 
   useEffect(() => {
     if (preSelectedItem) {
@@ -61,7 +68,9 @@ const UpdateStockForm = ({ items, preSelectedItem, onSubmit, onCancel }) => {
     onSubmit({
       item_id: selectedItemId,
       location,
-      entries: stockEntries
+      entries: stockEntries,
+      admin_id: currentUser?.id,
+      admin_name: currentUser?.name
     });
   };
 

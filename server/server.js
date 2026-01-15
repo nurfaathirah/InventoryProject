@@ -119,11 +119,11 @@ app.get('/api/stock', async (req, res) => {
 // Add stock entries
 app.post('/api/stock', async (req, res) => {
   try {
-    const { item_id, entries } = req.body;
+    const { item_id, entries, admin_id, admin_name } = req.body;
     const insertPromises = entries.map(entry =>
       pool.execute(
-        'INSERT INTO stock (item_id, serial_number, asset_id, location) VALUES (?, ?, ?, ?)',
-        [item_id, entry.serial_number, entry.asset_id, entry.location]
+        'INSERT INTO stock (item_id, serial_number, asset_id, location, admin_id, admin_name) VALUES (?, ?, ?, ?, ?, ?)',
+        [item_id, entry.serial_number, entry.asset_id, entry.location, admin_id || null, admin_name || null]
       )
     );
     await Promise.all(insertPromises);
@@ -225,6 +225,8 @@ app.post('/api/stock-out', async (req, res) => {
     const staff_id = req.body.staff_id ?? null;
     const deployment_location = req.body.deployment_location ?? null;
     const deployment_date = req.body.deployment_date ?? null;
+    const admin_id = req.body.admin_id ?? null;
+    const admin_name = req.body.admin_name ?? null;
     
     // Get stock entry and item details
     const [stockEntry] = await pool.execute(
@@ -246,11 +248,11 @@ app.post('/api/stock-out', async (req, res) => {
     const [result] = await pool.execute(
       `INSERT INTO stock_out 
        (stock_id, item_id, item_name, item_category, item_brand, item_model, 
-        serial_number, asset_id, location, staff_id, deployment_location, deployment_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        serial_number, asset_id, location, staff_id, deployment_location, deployment_date, admin_id, admin_name) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         stock_id, item_id, entry.item_name, entry.item_category, entry.item_brand, entry.item_model,
-        entry.serial_number, entry.asset_id, entry.location, staff_id, deployment_location, deployment_date
+        entry.serial_number, entry.asset_id, entry.location, staff_id, deployment_location, deployment_date, admin_id, admin_name
       ]
     );
     

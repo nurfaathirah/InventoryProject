@@ -38,13 +38,17 @@ CREATE TABLE IF NOT EXISTS stock (
     staff_id VARCHAR(100),
     deployment_location VARCHAR(255),
     deployment_date DATE,
+    admin_id INT,
+    admin_name VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_item_id (item_id),
     INDEX idx_serial_number (serial_number),
     INDEX idx_asset_id (asset_id),
-    INDEX idx_location (location)
+    INDEX idx_location (location),
+    INDEX idx_admin_id (admin_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Stock Out table (deployed stock entries)
@@ -62,13 +66,17 @@ CREATE TABLE IF NOT EXISTS stock_out (
     staff_id VARCHAR(100) NOT NULL,
     deployment_location VARCHAR(255) NOT NULL,
     deployment_date DATE NOT NULL,
+    admin_id INT,
+    admin_name VARCHAR(100),
     stock_out_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_item_id (item_id),
     INDEX idx_staff_id (staff_id),
     INDEX idx_deployment_location (deployment_location),
-    INDEX idx_stock_out_date (stock_out_date)
+    INDEX idx_stock_out_date (stock_out_date),
+    INDEX idx_admin_id (admin_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert sample data (optional)

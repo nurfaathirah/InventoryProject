@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ItemNameFilter from '../components/ItemNameFilter';
-import { getInventory, getItems, updateStockEntry, addStockOutEntry, getStockOut } from '../services/storage';
+import { getInventory, getItems, updateStockEntry, addStockOutEntry, getStockOut, getCurrentUser } from '../services/storage';
 
 const StockOut = ({ onNavigate, showList = false }) => {
   const [inventory, setInventory] = useState([]);
@@ -9,6 +9,12 @@ const StockOut = ({ onNavigate, showList = false }) => {
   const [selectedItemId, setSelectedItemId] = useState('');
   const [stockEntriesData, setStockEntriesData] = useState({});
   const [stockOutList, setStockOutList] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    setCurrentUser(user);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -107,7 +113,11 @@ const StockOut = ({ onNavigate, showList = false }) => {
       const updatedEntry = await updateStockEntry(stockEntryId, payload);
 
       console.debug('Creating stock-out for', stockEntryId, 'item', item.id);
-      await addStockOutEntry(stockEntryId, item.id, payload);
+      await addStockOutEntry(stockEntryId, item.id, {
+        ...payload,
+        admin_id: currentUser?.id,
+        admin_name: currentUser?.name
+      });
 
       alert('Stock entry saved and moved to Stock Out list');
       await loadData();
@@ -151,6 +161,7 @@ const StockOut = ({ onNavigate, showList = false }) => {
                   <th>Staff ID</th>
                   <th>Deployment Location</th>
                   <th>Deployment Date</th>
+                  <th>Admin Name</th>
                   <th>Stock Out Date</th>
                 </tr>
               </thead>
@@ -167,6 +178,7 @@ const StockOut = ({ onNavigate, showList = false }) => {
                     <td>{entry.staff_id || 'N/A'}</td>
                     <td>{entry.deployment_location || 'N/A'}</td>
                     <td>{entry.deployment_date ? new Date(entry.deployment_date).toLocaleDateString() : 'N/A'}</td>
+                    <td><strong>{entry.admin_name || 'N/A'}</strong></td>
                     <td>{entry.stock_out_date ? new Date(entry.stock_out_date).toLocaleDateString() : 'N/A'}</td>
                   </tr>
                 ))}

@@ -70,6 +70,7 @@ const SearchModal = ({ isOpen, onClose, onSearch, onNavigate, searchTerm: initia
             serialNumber: entry.serial_number,
             assetId: entry.asset_id,
             staffId: entry.staff_id,
+            adminName: entry.admin_name,
             deploymentLocation: entry.deployment_location,
             fullEntry: entry,
             highlight: entry.item_name && entry.item_name.toLowerCase().includes(term) ? 'name' : 'other'
@@ -192,6 +193,7 @@ const SearchModal = ({ isOpen, onClose, onSearch, onNavigate, searchTerm: initia
                               <span className="result-serial">Serial: {result.serialNumber}</span>
                               <span className="result-asset">Asset ID: {result.assetId}</span>
                               <span className="result-staff">Staff: {result.staffId}</span>
+                              <span className="result-admin">👨‍💼 Admin: {result.adminName || 'N/A'}</span>
                               <span className="result-location">📍 {result.deploymentLocation}</span>
                             </div>
                           </>
@@ -258,6 +260,7 @@ const SearchModal = ({ isOpen, onClose, onSearch, onNavigate, searchTerm: initia
                             <th>Asset ID</th>
                             <th>Serial Number</th>
                             <th>Location</th>
+                            <th>Admin Name</th>
                             <th>Date Restock</th>
                           </tr>
                         </thead>
@@ -267,6 +270,7 @@ const SearchModal = ({ isOpen, onClose, onSearch, onNavigate, searchTerm: initia
                               <td>{stock.asset_id || 'N/A'}</td>
                               <td>{stock.serial_number || 'N/A'}</td>
                               <td>{stock.location || 'N/A'}</td>
+                              <td><strong>{stock.admin_name || 'N/A'}</strong></td>
                               <td>{stock.created_at ? new Date(stock.created_at).toLocaleDateString() : 'N/A'}</td>
                             </tr>
                           ))}
@@ -299,6 +303,10 @@ const SearchModal = ({ isOpen, onClose, onSearch, onNavigate, searchTerm: initia
                   <div className="detail-row">
                     <span className="detail-label">Staff ID:</span>
                     <span className="detail-value"><strong>{selectedItem.fullEntry.staff_id}</strong></span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Admin Name:</span>
+                    <span className="detail-value"><strong>👨‍💼 {selectedItem.fullEntry.admin_name || 'N/A'}</strong></span>
                   </div>
                   <div className="detail-row">
                     <span className="detail-label">Deployment Location:</span>
