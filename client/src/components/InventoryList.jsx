@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './InventoryList.css';
 
-const InventoryList = ({ inventory, onUpdateStock, onEditStock }) => {
+const InventoryList = ({ inventory, onUpdateStock, onEditStock, expandedItemId = null, highlightedAssetOrSerial = '' }) => {
   const [expandedItems, setExpandedItems] = useState({});
+
+  useEffect(() => {
+    if (expandedItemId) {
+      setExpandedItems({ [expandedItemId]: true });
+    }
+  }, [expandedItemId]);
 
   const toggleExpand = (itemId) => {
     setExpandedItems(prev => ({
@@ -78,22 +84,28 @@ const InventoryList = ({ inventory, onUpdateStock, onEditStock }) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {item.stock.map((stockEntry) => (
-                          <tr key={stockEntry.id}>
-                            <td>{stockEntry.serial_number || 'N/A'}</td>
-                            <td>{stockEntry.asset_id || 'N/A'}</td>
-                            <td>📍 {stockEntry.location || 'N/A'}</td>
-                            <td>
-                              <button
-                                className="btn-edit-stock"
-                                onClick={() => onEditStock(stockEntry, item)}
-                                title="Edit Details"
-                              >
-                                ✏️ Edit Details
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {item.stock.map((stockEntry) => {
+                          const isHighlighted = highlightedAssetOrSerial && (
+                            (stockEntry.asset_id && stockEntry.asset_id.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase())) ||
+                            (stockEntry.serial_number && stockEntry.serial_number.toLowerCase().includes(highlightedAssetOrSerial.toLowerCase()))
+                          );
+                          return (
+                            <tr key={stockEntry.id} className={isHighlighted ? 'highlighted' : ''}>
+                              <td>{stockEntry.serial_number || 'N/A'}</td>
+                              <td>{stockEntry.asset_id || 'N/A'}</td>
+                              <td>📍 {stockEntry.location || 'N/A'}</td>
+                              <td>
+                                <button
+                                  className="btn-edit-stock"
+                                  onClick={() => onEditStock(stockEntry, item)}
+                                  title="Edit Details"
+                                >
+                                  ✏️ Edit Details
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

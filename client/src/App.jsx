@@ -71,10 +71,12 @@ function App() {
         if (!getCurrentUser()) return <Login onNavigate={handleNavigate} />;
         // Check if navigationData is an edit object or a preselected item
         const isEditData = navigationData && navigationData.editStock;
+        const isExpandData = navigationData && navigationData.expandedItemId;
         return (
           <StockIn 
-            preSelectedItem={isEditData ? null : navigationData} 
-            editData={isEditData ? navigationData : null} 
+            preSelectedItem={!isEditData && !isExpandData ? navigationData : null} 
+            editData={isEditData ? navigationData : null}
+            navigationData={isExpandData ? navigationData : null}
           />
         );
       case 'stock-out':
@@ -88,13 +90,22 @@ function App() {
         return <Report />;
       case 'login':
         return <Login onNavigate={handleNavigate} onLogin={(userData) => {
-          const userName = userData.email ? userData.email.split('@')[0] : 'User';
-          setCurrentUser({ name: userName });
+          setCurrentUser({
+            name: userData.name || userData.username || 'User',
+            email: userData.email || 'user@beyond2u.com',
+            username: userData.username || 'user',
+            id: userData.id
+          });
           handleNavigate('dashboard');
         }} />;
       case 'signup':
         return <SignUp onNavigate={handleNavigate} onSignUp={(userData) => {
-          setCurrentUser({ name: userData.name || 'User' });
+          setCurrentUser({
+            name: userData.name || userData.username || 'User',
+            email: userData.email || 'user@beyond2u.com',
+            username: userData.username || 'user',
+            id: userData.id
+          });
           handleNavigate('dashboard');
         }} />;
       default:

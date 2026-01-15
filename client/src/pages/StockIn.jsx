@@ -5,7 +5,7 @@ import EditStockForm from '../components/EditStockForm';
 import InventoryList from '../components/InventoryList';
 import { getInventory, getItems, addItem, addStockEntries, updateStockEntry, deleteStockEntry } from '../services/storage';
 
-const StockIn = ({ preSelectedItem, editData }) => {
+const StockIn = ({ preSelectedItem, editData, navigationData }) => {
   const [inventory, setInventory] = useState([]);
   const [items, setItems] = useState([]);
   const [filteredInventory, setFilteredInventory] = useState([]);
@@ -15,6 +15,8 @@ const StockIn = ({ preSelectedItem, editData }) => {
   const [showEditStockForm, setShowEditStockForm] = useState(false);
   const [editingStockEntry, setEditingStockEntry] = useState(null);
   const [editingStockItem, setEditingStockItem] = useState(null);
+  const [expandedItemId, setExpandedItemId] = useState(navigationData?.expandedItemId || null);
+  const [highlightedAssetOrSerial, setHighlightedAssetOrSerial] = useState(navigationData?.highlightedAssetOrSerial || '');
 
   useEffect(() => {
     loadData();
@@ -173,6 +175,8 @@ const StockIn = ({ preSelectedItem, editData }) => {
         inventory={filteredInventory}
         onUpdateStock={handleUpdateStock}
         onEditStock={handleEditStock}
+        expandedItemId={expandedItemId}
+        highlightedAssetOrSerial={highlightedAssetOrSerial}
       />
     </div>
   );

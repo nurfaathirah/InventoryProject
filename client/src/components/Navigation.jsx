@@ -2,19 +2,37 @@ import React, { useState, useEffect } from 'react';
 import './Navigation.css';
 import SearchModal from './SearchModal';
 import { getCurrentUser, setCurrentUser } from '../services/storage';
+import { getCurrentUser as fetchCurrentUser } from '../services/api';
 
 const Navigation = ({ currentPage, onNavigate, onSearch }) => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [userName, setUserName] = useState(null);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    setUserName(user ? user.name : null);
+    const loadUserName = async () => {
+      const user = getCurrentUser();
+      if (user && user.id) {
+        try {
+          const serverUser = await fetchCurrentUser(user.id);
+          if (serverUser && serverUser.success && serverUser.user && serverUser.user.name) {
+            setUserName(serverUser.user.name);
+          } else {
+            setUserName(user.name || null);
+          }
+        } catch (err) {
+          console.error('Error fetching user name:', err);
+          setUserName(user.name || null);
+        }
+      } else {
+        setUserName(user ? user.name : null);
+      }
+    };
+    loadUserName();
     // Check periodically for user changes
     const interval = setInterval(() => {
       const currentUser = getCurrentUser();
       if ((currentUser && currentUser.name) !== userName) {
-        setUserName(currentUser ? currentUser.name : null);
+        loadUserName();
       }
     }, 500);
     return () => clearInterval(interval);
@@ -113,6 +131,7 @@ const Navigation = ({ currentPage, onNavigate, onSearch }) => {
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
         onSearch={handleSearch}
+        onNavigate={onNavigate}
       />
     </>
   );

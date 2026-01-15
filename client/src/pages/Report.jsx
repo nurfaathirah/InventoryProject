@@ -1,14 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { getInventory, getStats, getStockOut } from '../services/storage';
+import { getInventory, getStats, getStockOut, getCurrentUser } from '../services/storage';
+import { getCurrentUser as fetchCurrentUser } from '../services/api';
+import './Report.css';
 
 const Report = () => {
   const [inventory, setInventory] = useState([]);
   const [stats, setStats] = useState({ totalItems: 0, pcs: 0, laptops: 0, totalQuantity: 0 });
   const [reportType, setReportType] = useState('summary');
   const [stockOutList, setStockOutList] = useState([]);
+  const [userInfo, setUserInfo] = useState({
+    name: 'User',
+    email: 'user@beyond2u.com',
+    companyName: 'Beyond2u Sdn Bhd'
+  });
 
   useEffect(() => {
-    loadData();
+    const loadUserData = async () => {
+      const currentUser = getCurrentUser();
+      if (currentUser && currentUser.id) {
+        try {
+          const serverUser = await fetchCurrentUser(currentUser.id);
+          if (serverUser && serverUser.success && serverUser.user) {
+            setUserInfo({
+              name: serverUser.user.name || currentUser.name || 'User',
+              email: serverUser.user.email || currentUser.email || 'user@beyond2u.com',
+              companyName: 'Beyond2u Sdn Bhd'
+            });
+          } else if (currentUser) {
+            setUserInfo({
+              name: currentUser.name || currentUser.username || 'User',
+              email: currentUser.email || 'user@beyond2u.com',
+              companyName: 'Beyond2u Sdn Bhd'
+            });
+          }
+        } catch (err) {
+          console.error('Error fetching user data:', err);
+          if (currentUser) {
+            setUserInfo({
+              name: currentUser.name || currentUser.username || 'User',
+              email: currentUser.email || 'user@beyond2u.com',
+              companyName: 'Beyond2u Sdn Bhd'
+            });
+          }
+        }
+      }
+      loadData();
+    };
+    loadUserData();
   }, []);
 
   const loadData = async () => {
@@ -22,109 +60,235 @@ const Report = () => {
 
   const renderReportTable = () => {
     if (reportType === 'summary') {
+      // Group items by category
+      const pcItems = inventory.filter(item => item.category && item.category.toLowerCase().includes('pc'));
+      const laptopItems = inventory.filter(item => item.category && item.category.toLowerCase().includes('laptop'));
+      const totalPcStock = pcItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const totalLaptopStock = laptopItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
       return (
-        <table className="report-table">
-          <thead>
-            <tr><th>Metric</th><th>Value</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Total Items</td><td>{stats.totalItems}</td></tr>
-            <tr><td>PCs</td><td>{stats.pcs}</td></tr>
-            <tr><td>Laptops</td><td>{stats.laptops}</td></tr>
-            <tr><td>Total Stock Units</td><td>{stats.totalQuantity}</td></tr>
-          </tbody>
-        </table>
+        <div className="report-container">
+          <div className="report-header">
+            <h1 className="report-title">Professional Inventory Summary Report</h1>
+            <div className="report-info">
+              <p><strong>Prepared by:</strong> {userInfo.name}</p>
+              <p><strong>Email:</strong> {userInfo.email}</p>
+              <p><strong>Company Name:</strong> {userInfo.companyName}</p>
+              <p><strong>Date Prepared:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <hr />
+          </div>
+          <h2 className="report-section-title">Inventory Summary</h2>
+          <table className="report-table professional-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Item Name</th>
+                <th>Stock Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pcItems.length > 0 && (
+                <>
+                  {pcItems.map((item, idx) => (
+                    <tr key={item.id}>
+                      {idx === 0 && <td rowSpan={pcItems.length}><strong>PC</strong></td>}
+                      <td>{item.name}</td>
+                      <td><strong>{item.quantity || 0}</strong></td>
+                    </tr>
+                  ))}
+                  <tr className="highlight-row">
+                    <td colSpan={2}><strong>Total PC Stock</strong></td>
+                    <td><strong>{totalPcStock}</strong></td>
+                  </tr>
+                </>
+              )}
+              {laptopItems.length > 0 && (
+                <>
+                  {laptopItems.map((item, idx) => (
+                    <tr key={item.id}>
+                      {idx === 0 && <td rowSpan={laptopItems.length}><strong>Laptop</strong></td>}
+                      <td>{item.name}</td>
+                      <td><strong>{item.quantity || 0}</strong></td>
+                    </tr>
+                  ))}
+                  <tr className="highlight-row">
+                    <td colSpan={2}><strong>Total Laptop Stock</strong></td>
+                    <td><strong>{totalLaptopStock}</strong></td>
+                  </tr>
+                </>
+              )}
+              <tr className="highlight-row" style={{backgroundColor: '#c8e6c9'}}>
+                <td colSpan={2}><strong>Grand Total</strong></td>
+                <td><strong>{totalPcStock + totalLaptopStock}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       );
     }
 
     if (reportType === 'detailed') {
       return (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Item Name</th>
-              <th>Category</th>
-              <th>Brand</th>
-              <th>Model</th>
-              <th>Stock Quantity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inventory.map(item => (
-              <tr key={item.id}>
-                <td>{item.name}</td>
-                <td>{item.category}</td>
-                <td>{item.brand}</td>
-                <td>{item.model}</td>
-                <td>{item.quantity || 0}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="report-container">
+          <div className="report-header">
+            <h1 className="report-title">Professional Detailed Inventory Report</h1>
+            <div className="report-info">
+              <p><strong>Prepared by:</strong> {userInfo.name}</p>
+              <p><strong>Email:</strong> {userInfo.email}</p>
+              <p><strong>Company Name:</strong> {userInfo.companyName}</p>
+              <p><strong>Date Prepared:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <hr />
+          </div>
+          <h2 className="report-section-title">Detailed Inventory Listing</h2>
+          {inventory.length > 0 ? inventory.map((item, idx) => (
+            <div key={item.id} className="item-section">
+              <div className="item-details">
+                <div className="item-info-row">
+                  <span className="item-label">Item Name:</span>
+                  <span className="item-value">{item.name}</span>
+                </div>
+                <div className="item-info-row">
+                  <span className="item-label">Brand:</span>
+                  <span className="item-value">{item.brand}</span>
+                </div>
+                <div className="item-info-row">
+                  <span className="item-label">Model:</span>
+                  <span className="item-value">{item.model}</span>
+                </div>
+                <div className="item-info-row">
+                  <span className="item-label">Stock Count:</span>
+                  <span className="item-value"><strong>{item.quantity || 0}</strong></span>
+                </div>
+              </div>
+              {item.stock && item.stock.length > 0 && (
+                <table className="report-table professional-table">
+                  <thead>
+                    <tr>
+                      <th>Asset ID</th>
+                      <th>Serial Number</th>
+                      <th>Date Restock</th>
+                      <th>Location</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {item.stock.map((stock, stockIdx) => (
+                      <tr key={stock.id || stockIdx}>
+                        <td>{stock.asset_id || 'N/A'}</td>
+                        <td>{stock.serial_number || 'N/A'}</td>
+                        <td>{stock.created_at ? new Date(stock.created_at).toLocaleDateString() : 'N/A'}</td>
+                        <td>{stock.location || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )) : (
+            <div className="text-center">No items found</div>
+          )}
+        </div>
       );
     }
 
     if (reportType === 'low-stock') {
       const lowStockItems = inventory.filter(item => (item.quantity || 0) === 0);
       return (
-        <table className="report-table">
-          <thead>
-            <tr><th>Item Name</th><th>Category</th><th>Brand</th><th>Model</th></tr>
-          </thead>
-          <tbody>
-            {lowStockItems.length === 0 ? (
-              <tr><td colSpan={4}>No items with zero stock</td></tr>
-            ) : (
-              lowStockItems.map(item => (
-                <tr key={item.id}><td>{item.name}</td><td>{item.category}</td><td>{item.brand}</td><td>{item.model}</td></tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <div className="report-container">
+          <div className="report-header">
+            <h1 className="report-title">Professional Low Stock Alert Report</h1>
+            <div className="report-info">
+              <p><strong>Prepared by:</strong> {userInfo.name}</p>
+              <p><strong>Email:</strong> {userInfo.email}</p>
+              <p><strong>Company Name:</strong> {userInfo.companyName}</p>
+              <p><strong>Date Prepared:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <hr />
+          </div>
+          <h2 className="report-section-title">Items with Zero Stock ({lowStockItems.length})</h2>
+          <table className="report-table professional-table">
+            <thead>
+              <tr>
+                <th>Item ID</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lowStockItems.length === 0 ? (
+                <tr><td colSpan={6} className="text-center success">✓ All items are in stock</td></tr>
+              ) : (
+                lowStockItems.map((item, idx) => (
+                  <tr key={item.id} className="alert-row">
+                    <td>{idx + 1001}</td>
+                    <td><strong>{item.name}</strong></td>
+                    <td>{item.category}</td>
+                    <td>{item.brand}</td>
+                    <td>{item.model}</td>
+                    <td><span className="alert-badge">OUT OF STOCK</span></td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       );
     }
 
     // stock-out
     const entries = stockOutList || [];
     return (
-      <table className="report-table">
-        <thead>
-          <tr>
-            <th>Item Name</th>
-            <th>Category</th>
-            <th>Brand</th>
-            <th>Model</th>
-            <th>Serial Number</th>
-            <th>Asset ID</th>
-            <th>Location</th>
-            <th>Staff ID</th>
-            <th>Deployment Location</th>
-            <th>Deployment Date</th>
-            <th>Stock Out Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.length === 0 ? (
-            <tr><td colSpan={11}>No stock out entries</td></tr>
-          ) : (
-            entries.map(e => (
-              <tr key={e.id}>
-                <td>{e.item_name || 'N/A'}</td>
-                <td>{e.item_category || 'N/A'}</td>
-                <td>{e.item_brand || 'N/A'}</td>
-                <td>{e.item_model || 'N/A'}</td>
-                <td>{e.serial_number || 'N/A'}</td>
-                <td>{e.asset_id || 'N/A'}</td>
-                <td>{e.location || 'N/A'}</td>
-                <td>{e.staff_id || 'N/A'}</td>
-                <td>{e.deployment_location || 'N/A'}</td>
-                <td>{e.deployment_date ? new Date(e.deployment_date).toLocaleDateString() : 'N/A'}</td>
-                <td>{e.stock_out_date ? new Date(e.stock_out_date).toLocaleDateString() : 'N/A'}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+      <div className="report-container">
+        <div className="report-header">
+          <h1 className="report-title">Professional Stock Out Deployment Report</h1>
+          <div className="report-info">
+            <p><strong>Prepared by:</strong> {userInfo.name}</p>
+            <p><strong>Email:</strong> {userInfo.email}</p>
+            <p><strong>Company Name:</strong> {userInfo.companyName}</p>
+            <p><strong>Date Prepared:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+          <hr />
+        </div>
+        <h2 className="report-section-title">Deployed Stock Items ({entries.length})</h2>
+        <table className="report-table professional-table">
+          <thead>
+            <tr>
+              <th>Item ID</th>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>Serial Number</th>
+              <th>Asset ID</th>
+              <th>Staff ID</th>
+              <th>Deployment Location</th>
+              <th>Deployment Date</th>
+              <th>Stock Out Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.length === 0 ? (
+              <tr><td colSpan={9} className="text-center">No stock out entries</td></tr>
+            ) : (
+              entries.map((e, idx) => (
+                <tr key={e.id}>
+                  <td>{idx + 2001}</td>
+                  <td>{e.item_name || 'N/A'}</td>
+                  <td>{e.item_category || 'N/A'}</td>
+                  <td>{e.serial_number || 'N/A'}</td>
+                  <td>{e.asset_id || 'N/A'}</td>
+                  <td><strong>{e.staff_id || 'N/A'}</strong></td>
+                  <td>{e.deployment_location || 'N/A'}</td>
+                  <td>{e.deployment_date ? new Date(e.deployment_date).toLocaleDateString() : 'N/A'}</td>
+                  <td>{e.stock_out_date ? new Date(e.stock_out_date).toLocaleDateString() : 'N/A'}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     );
   };
 
@@ -133,12 +297,20 @@ const Report = () => {
     if (reportType === 'summary') {
       csv = 'Metric,Value\nTotal Items,' + stats.totalItems + '\nPCs,' + stats.pcs + '\nLaptops,' + stats.laptops + '\nTotal Stock Units,' + stats.totalQuantity;
     } else if (reportType === 'detailed') {
-      const headers = ['Item Name','Category','Brand','Model','Stock Quantity'];
+      const headers = ['Item Name','Brand','Model','Stock Quantity','Asset ID','Serial Number','Date Restock','Location'];
       csv += headers.join(',') + '\n';
       (inventory || []).forEach(item => {
-        const line = [item.name, item.category, item.brand, item.model, item.quantity || 0]
-          .map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',');
-        csv += line + '\n';
+        if (item.stock && item.stock.length > 0) {
+          item.stock.forEach(stock => {
+            const line = [item.name, item.brand, item.model, item.quantity || 0, stock.asset_id || 'N/A', stock.serial_number || 'N/A', stock.created_at ? new Date(stock.created_at).toLocaleDateString() : 'N/A', stock.location || 'N/A']
+              .map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',');
+            csv += line + '\n';
+          });
+        } else {
+          const line = [item.name, item.brand, item.model, item.quantity || 0, 'N/A', 'N/A', 'N/A', 'N/A']
+            .map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',');
+          csv += line + '\n';
+        }
       });
     } else if (reportType === 'low-stock') {
       const lowStockItems = inventory.filter(item => (item.quantity || 0) === 0);
@@ -174,36 +346,193 @@ const Report = () => {
   };
 
   const generateHTMLTable = () => {
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const headerHTML = `
+      <div style="margin-bottom: 30px; padding-bottom: 20px;">
+        <h1 style="font-size: 24px; font-weight: bold; color: #1a3a3a; text-align: center; margin: 0 0 20px 0;">Professional Inventory Report</h1>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 13px;">
+          <p><strong>Prepared by:</strong> ${userInfo.name}</p>
+          <p><strong>Email:</strong> ${userInfo.email}</p>
+          <p><strong>Company Name:</strong> ${userInfo.companyName}</p>
+          <p><strong>Date Prepared:</strong> ${dateStr}</p>
+          <p><strong>Report Type:</strong> ${reportType.toUpperCase()}</p>
+        </div>
+        <hr style="border: none; border-top: 2px solid #2d5016; margin: 20px 0;" />
+      </div>
+    `;
+
     if (reportType === 'summary') {
-      return `<table border="1" cellspacing="0" cellpadding="6"><tr><th>Metric</th><th>Value</th></tr><tr><td>Total Items</td><td>${stats.totalItems}</td></tr><tr><td>PCs</td><td>${stats.pcs}</td></tr><tr><td>Laptops</td><td>${stats.laptops}</td></tr><tr><td>Total Stock Units</td><td>${stats.totalQuantity}</td></tr></table>`;
+      const tableHTML = `
+        <h2 style="font-size: 18px; font-weight: 600; color: #1a3a3a; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">Inventory Summary</h2>
+        <table border="1" cellspacing="0" cellpadding="12" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <thead style="background-color: #2d5016; color: white;">
+            <tr>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Metric</th>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Count</th>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background-color: #f9f9f9;">
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">Total Items</td>
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">${stats.totalItems}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">100%</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">PCs</td>
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">${stats.pcs}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">${stats.totalItems > 0 ? ((stats.pcs / stats.totalItems) * 100).toFixed(1) : 0}%</td>
+            </tr>
+            <tr style="background-color: #f9f9f9;">
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">Laptops</td>
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">${stats.laptops}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ddd;">${stats.totalItems > 0 ? ((stats.laptops / stats.totalItems) * 100).toFixed(1) : 0}%</td>
+            </tr>
+            <tr style="background-color: #e8f5e9; font-weight: 600;">
+              <td style="padding: 12px 15px; border: 1px solid #2d5016;"><strong>Total Stock Units</strong></td>
+              <td style="padding: 12px 15px; border: 1px solid #2d5016;"><strong>${stats.totalQuantity}</strong></td>
+              <td style="padding: 12px 15px; border: 1px solid #2d5016;"><strong>-</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+      return headerHTML + tableHTML;
     } else if (reportType === 'detailed') {
-      let html = `<table border="1" cellspacing="0" cellpadding="6"><tr><th>Item Name</th><th>Category</th><th>Brand</th><th>Model</th><th>Stock Quantity</th></tr>`;
-      (inventory || []).forEach(item => {
-        html += `<tr><td>${item.name}</td><td>${item.category}</td><td>${item.brand}</td><td>${item.model}</td><td>${item.quantity || 0}</td></tr>`;
-      });
-      html += '</table>';
-      return html;
-    } else if (reportType === 'low-stock') {
-      const lowStockItems = inventory.filter(item => (item.quantity || 0) === 0);
-      let html = `<table border="1" cellspacing="0" cellpadding="6"><tr><th>Item Name</th><th>Category</th><th>Brand</th><th>Model</th></tr>`;
-      if (lowStockItems.length > 0) {
-        lowStockItems.forEach(item => {
-          html += `<tr><td>${item.name}</td><td>${item.category}</td><td>${item.brand}</td><td>${item.model}</td></tr>`;
+      let tableHTML = `
+        <h2 style="font-size: 18px; font-weight: 600; color: #1a3a3a; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">Detailed Inventory Listing</h2>
+      `;
+      if (inventory.length > 0) {
+        inventory.forEach(item => {
+          tableHTML += `
+            <div style="margin-bottom: 20px; padding: 20px; background-color: #f9f9f9; border-left: 4px solid #2d5016; border-radius: 4px;">
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <div style="font-weight: 600; color: #1a3a3a; font-size: 12px; margin-bottom: 5px;">Item Name:</div>
+                  <div style="color: #333; font-size: 13px;">${item.name}</div>
+                </div>
+                <div>
+                  <div style="font-weight: 600; color: #1a3a3a; font-size: 12px; margin-bottom: 5px;">Brand:</div>
+                  <div style="color: #333; font-size: 13px;">${item.brand}</div>
+                </div>
+                <div>
+                  <div style="font-weight: 600; color: #1a3a3a; font-size: 12px; margin-bottom: 5px;">Model:</div>
+                  <div style="color: #333; font-size: 13px;">${item.model}</div>
+                </div>
+                <div>
+                  <div style="font-weight: 600; color: #1a3a3a; font-size: 12px; margin-bottom: 5px;">Stock Count:</div>
+                  <div style="color: #333; font-size: 13px; font-weight: 600;">${item.quantity || 0}</div>
+                </div>
+              </div>
+          `;
+          if (item.stock && item.stock.length > 0) {
+            tableHTML += `
+              <table border="1" cellspacing="0" cellpadding="12" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead style="background-color: #2d5016; color: white;">
+                  <tr>
+                    <th style="padding: 10px 12px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Asset ID</th>
+                    <th style="padding: 10px 12px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Serial Number</th>
+                    <th style="padding: 10px 12px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Date Restock</th>
+                    <th style="padding: 10px 12px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+            `;
+            item.stock.forEach((stock, idx) => {
+              const bgColor = idx % 2 === 0 ? '#f9f9f9' : 'white';
+              tableHTML += `
+                <tr style="background-color: ${bgColor};">
+                  <td style="padding: 10px 12px; border: 1px solid #ddd;">${stock.asset_id || 'N/A'}</td>
+                  <td style="padding: 10px 12px; border: 1px solid #ddd;">${stock.serial_number || 'N/A'}</td>
+                  <td style="padding: 10px 12px; border: 1px solid #ddd;">${stock.created_at ? new Date(stock.created_at).toLocaleDateString() : 'N/A'}</td>
+                  <td style="padding: 10px 12px; border: 1px solid #ddd;">${stock.location || 'N/A'}</td>
+                </tr>
+              `;
+            });
+            tableHTML += `
+                </tbody>
+              </table>
+            `;
+          }
+          tableHTML += `</div>`;
         });
       } else {
-        html += '<tr><td colspan="4">No items with zero stock</td></tr>';
+        tableHTML += `<div style="text-align: center; padding: 20px;">No items found</div>`;
       }
-      html += '</table>';
-      return html;
+      return headerHTML + tableHTML;
+    } else if (reportType === 'low-stock') {
+      const lowStockItems = inventory.filter(item => (item.quantity || 0) === 0);
+      let tableHTML = `
+        <h2 style="font-size: 18px; font-weight: 600; color: #1a3a3a; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">Items with Zero Stock (${lowStockItems.length})</h2>
+        <table border="1" cellspacing="0" cellpadding="12" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <thead style="background-color: #2d5016; color: white;">
+            <tr>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Item ID</th>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Item Name</th>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Category</th>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Brand</th>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Model</th>
+              <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      if (lowStockItems.length === 0) {
+        tableHTML += `<tr><td colspan="6" style="text-align: center; padding: 12px 15px; border: 1px solid #ddd; color: #2d5016; font-weight: 600;">✓ All items are in stock</td></tr>`;
+      } else {
+        lowStockItems.forEach((item, idx) => {
+          tableHTML += `
+            <tr style="background-color: #ffebee; border: 1px solid #ef5350;">
+              <td style="padding: 12px 15px; border: 1px solid #ef5350;">${idx + 1001}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ef5350; font-weight: 600;">${item.name}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ef5350;">${item.category}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ef5350;">${item.brand}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ef5350;">${item.model}</td>
+              <td style="padding: 12px 15px; border: 1px solid #ef5350;"><span style="display: inline-block; background-color: #f44336; color: white; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 12px;">OUT OF STOCK</span></td>
+            </tr>
+          `;
+        });
+      }
+      tableHTML += `</tbody></table>`;
+      return headerHTML + tableHTML;
     }
     // stock-out
     const rows = stockOutList || [];
-    let html = `<table border="1" cellspacing="0" cellpadding="6"><tr><th>Item Name</th><th>Category</th><th>Brand</th><th>Model</th><th>Serial</th><th>Asset</th><th>Location</th><th>Staff ID</th><th>Deployment Location</th><th>Deployment Date</th><th>Stock Out Date</th></tr>`;
-    rows.forEach(r => {
-      html += `<tr><td>${r.item_name || ''}</td><td>${r.item_category || ''}</td><td>${r.item_brand || ''}</td><td>${r.item_model || ''}</td><td>${r.serial_number || ''}</td><td>${r.asset_id || ''}</td><td>${r.location || ''}</td><td>${r.staff_id || ''}</td><td>${r.deployment_location || ''}</td><td>${r.deployment_date ? new Date(r.deployment_date).toLocaleDateString() : ''}</td><td>${r.stock_out_date ? new Date(r.stock_out_date).toLocaleDateString() : ''}</td></tr>`;
-    });
-    html += '</table>';
-    return html;
+    let tableHTML = `
+      <h2 style="font-size: 18px; font-weight: 600; color: #1a3a3a; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">Deployed Stock Items (${rows.length})</h2>
+      <table border="1" cellspacing="0" cellpadding="12" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <thead style="background-color: #2d5016; color: white;">
+          <tr>
+            <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Item ID</th>
+            <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Item Name</th>
+            <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Serial Number</th>
+            <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Staff ID</th>
+            <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Deployment Location</th>
+            <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Deployment Date</th>
+            <th style="padding: 12px 15px; text-align: left; font-weight: 600; border: 1px solid #2d5016;">Stock Out Date</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    if (rows.length === 0) {
+      tableHTML += `<tr><td colspan="7" style="text-align: center; padding: 12px 15px; border: 1px solid #ddd;">No stock out entries</td></tr>`;
+    } else {
+      rows.forEach((e, idx) => {
+        const bgColor = idx % 2 === 0 ? '#f9f9f9' : 'white';
+        tableHTML += `
+          <tr style="background-color: ${bgColor};">
+            <td style="padding: 12px 15px; border: 1px solid #ddd;">${idx + 2001}</td>
+            <td style="padding: 12px 15px; border: 1px solid #ddd;">${e.item_name || 'N/A'}</td>
+            <td style="padding: 12px 15px; border: 1px solid #ddd;">${e.serial_number || 'N/A'}</td>
+            <td style="padding: 12px 15px; border: 1px solid #ddd; font-weight: 600;">${e.staff_id || 'N/A'}</td>
+            <td style="padding: 12px 15px; border: 1px solid #ddd;">${e.deployment_location || 'N/A'}</td>
+            <td style="padding: 12px 15px; border: 1px solid #ddd;">${e.deployment_date ? new Date(e.deployment_date).toLocaleDateString() : 'N/A'}</td>
+            <td style="padding: 12px 15px; border: 1px solid #ddd;">${e.stock_out_date ? new Date(e.stock_out_date).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `;
+      });
+    }
+    tableHTML += `</tbody></table>`;
+    return headerHTML + tableHTML;
   };
 
   const handleExportPDF = () => {
@@ -212,11 +541,18 @@ const Report = () => {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Report</title>
-          <style>body{font-family:Arial,Helvetica,sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:6px;text-align:left}</style>
+          <title>Inventory Report</title>
+          <style>
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              padding: 20px;
+              line-height: 1.6;
+            }
+            h1 { color: #1a3a3a; }
+            h2 { color: #1a3a3a; }
+          </style>
         </head>
         <body>
-          <h1>${reportType.toUpperCase()} Report</h1>
           ${html}
         </body>
       </html>
