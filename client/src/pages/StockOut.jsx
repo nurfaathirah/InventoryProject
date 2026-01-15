@@ -59,7 +59,8 @@ const StockOut = ({ onNavigate, showList = false }) => {
     let filtered = [...inventory];
 
     if (selectedItemId) {
-      filtered = filtered.filter(item => item.id === selectedItemId);
+      // Ensure comparison works for numeric/string IDs by normalizing to string
+      filtered = filtered.filter(item => String(item.id) === String(selectedItemId));
     }
 
     setFilteredInventory(filtered);
